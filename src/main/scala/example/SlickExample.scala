@@ -39,10 +39,32 @@ object SlickExample extends App {
     })
     val q1 = for(m <- movies) yield m.title
     db.stream(q1.result).foreach(println)
+
+    // Insert
     val insert = DBIO.seq(
-      movies += Movie("tt1234567", "Foo", "1970", "Bar", "Meh, Hmm", "Hmmmmmmm")
+      movies += Movie("1", "Foo1", "1970", "Bar", "Meh, Hmm", "Hmmmmmmm"),
+
+      movies ++= Seq(
+        Movie("2", "Foo2", "1970", "Bar", "Meh, Hmm", "Hmmmmmmm"),
+        Movie("3", "Foo3", "1970", "Bar", "Meh, Hmm", "Hmmmmmmm")
+        )
     )
     val insertFuture = db.run(insert)
     insertFuture.onComplete( _ => db.stream(q1.result).foreach(println))
+
+    // Select
+    val select = movies.filter(movie => movie.title.length <= 5).result
+    val selectFuture = db.run(select)
+    selectFuture.onComplete {
+      case Success(response) => println(response)
+      case Failure(e) => println(e.getMessage)
+    }
+
+    // Update
+
+    // Delete
+
+    // Join
+
   } finally db.close
 }
