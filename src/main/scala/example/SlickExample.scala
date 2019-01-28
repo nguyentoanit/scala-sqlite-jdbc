@@ -4,9 +4,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import slick.driver.SQLiteDriver.api._
 import scala.util.{Failure, Success}
 
-case class Movie(imdbID: String, title: String, year: String, director: String, actors: String, plot: String)
+case class Movie(id: String, title: String, year: String, director: String, actors: String, plot: String)
 class Movies(tag: Tag) extends Table[Movie](tag, "Movies") {
-  def imdbID = column[String]("imdbID", O.PrimaryKey)
+  def id = column[String]("id", O.PrimaryKey)
   def title = column[String]("Title")
   def year = column[String]("Year")
   def director = column[String]("Director")
@@ -19,7 +19,7 @@ class Movies(tag: Tag) extends Table[Movie](tag, "Movies") {
 
       It is possible to define a mapped table that uses a custom type for its * projection by adding a bi-directional mapping with the <> operator
    */
-  def * = (imdbID, title, year, director, actors, plot) <> (Movie.tupled, Movie.unapply)
+  def * = (id, title, year, director, actors, plot) <> (Movie.tupled, Movie.unapply)
 }
 
 object SlickExample extends App {
@@ -52,8 +52,9 @@ object SlickExample extends App {
     val insertFuture = db.run(insert)
     insertFuture.onComplete( _ => db.stream(q1.result).foreach(println))
 
+
     // Select
-    val select = movies.filter(movie => movie.title.length <= 5).result
+    val select = movies.filter(_.id === "1").result
     val selectFuture = db.run(select)
     selectFuture.onComplete {
       case Success(response) => println(response)
@@ -61,8 +62,24 @@ object SlickExample extends App {
     }
 
     // Update
+    val u = for { m <- movies if m.id === "1" } yield m.title
+    val updateAction = u.update("Foo1 Updated")
+
+    // update "Movies" set "Title" = ? where "Movies"."id" = '1'
+    val updateFuture = db.run(updateAction)
+    updateFuture.onComplete {
+      case Success(response) => println(response)
+      case Failure(e) => println(e.getMessage)
+    }
 
     // Delete
+    val d = movies.filter(_.id === "3")
+    val deleteAction = d.delete
+    val deleteFuture = db.run(deleteAction)
+    deleteFuture.onComplete {
+      case Success(response) => println(response)
+      case Failure(e) => println(e.getMessage)
+    }
 
     // Join
 
